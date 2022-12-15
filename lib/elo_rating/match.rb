@@ -52,12 +52,15 @@ class EloRating::Match
   class Player
   # :nodoc:
     attr_reader :rating, :place, :match
-    def initialize(match:, rating:, place: nil, winner: nil)
-      validate_attributes!(rating: rating, place: place, winner: winner)
-      @match = match
-      @rating = rating
-      @place = place
-      @winner = winner
+    def initialize(*args)
+      args = args.first
+
+      @match = args[:match]
+      @rating = args[:rating]
+      @place = args[:place]
+      @winner = args[:winner]
+
+      validate_attributes!(rating: @rating, place: @place, winner: @winner)
     end
 
     def winner?
