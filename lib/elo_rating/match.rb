@@ -36,12 +36,12 @@ class EloRating::Match
   private
 
   def validate_players!
-    raise ArgumentError, 'Only one player can be the winner' if multiple_winners?
+    raise ArgumentError, 'Not all players can be winners' if multiple_winners?
     raise ArgumentError, 'All players must have places if any do' if inconsistent_places?
   end
 
   def multiple_winners?
-    players.select { |player| player.winner? }.size > 1
+    players.select { |player| player.winner? }.size == players.size
   end
 
   def inconsistent_places?
