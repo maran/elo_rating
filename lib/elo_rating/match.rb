@@ -82,31 +82,69 @@ class EloRating::Match
     end
 
     def total_rating_adjustments
-      opponents.map do |opponent|
-        rating_adjustment_against(opponent)
-      end.reduce(0, :+)
+      # If you win you get elo from all losing opponents
+      if self.winner?
+         losers.map do |opponent|
+           rating_adjustment_against(opponent)
+        end.reduce(0, :+)
+      else
+        # If you are a loser and there are multiple winners you lose against the average score
+        # of all all winners combined
+        if self.winners.length > 1
+          ratings = self.winners.collect(&:rating)
+          average_rating = ratings.sum(0.0) / ratings.size
+          return EloRating.rating_adjustment(
+            EloRating.expected_score(rating, average_rating),
+            0,
+            rating: rating
+          )
+        else
+          # If there is only one winner just lose from that winner only
+          return rating_adjustment_against(winners.first)
+        end
+      end
     end
 
     def rating_adjustment_against(opponent)
-      EloRating.rating_adjustment(
+      adjustment = EloRating.rating_adjustment(
         expected_score_against(opponent),
         actual_score_against(opponent),
         rating: rating
       )
+
+      # if you win but it's a shared win you share that win with all other winners
+      if winner? && self.winners.size > 0
+        return adjustment.to_f / self.all_winners.size
+      end
+
+      return adjustment
     end
 
     def expected_score_against(opponent)
       EloRating.expected_score(rating, opponent.rating)
     end
 
+    def winners
+      opponents.find_all{|x| x.winner?}
+    end
+
+    def losers
+      opponents.find_all{|x| !x.winner?}
+    end
+
+    # this includes us
+    def all_winners
+      match.players.find_all{|x| x.winner?}
+    end
+
     def actual_score_against(opponent)
-      if won_against?(opponent)
-        1
-      elsif opponent.won_against?(self)
-        0
-      else # draw
-        0.5
+      # There are no other winners and you are a winner
+      if self.winner?
+        return 1 
       end
+
+      # If there are winners but you are not it, you lose
+      return 0 if !winners.empty? && !self.winner?
     end
 
     def won_against?(opponent)

@@ -21,23 +21,58 @@ describe EloRating::Match do
       end
     end
 
+    context 'match with 4 players and one winner' do
+      it 'returns the updated ratings of all the players' do
+        match = EloRating::Match.new
+        match.add_player(rating: 1900)
+        match.add_player(rating: 2000)
+        match.add_player(rating: 2000)
+        match.add_player(rating: 2100, winner: true)
+        expect(match.updated_ratings).to eql [1894, 1991, 1991, 2123]
+      end
+    end
+
+    context 'match with 4 players and two winners' do
+      it 'returns the updated ratings of all the players' do
+        match = EloRating::Match.new
+        match.add_player(rating: 2000, winner: true)
+        match.add_player(rating: 2000, winner: true)
+        match.add_player(rating: 2100, winner: false)
+        match.add_player(rating: 1500, winner: false)
+        expect(match.updated_ratings).to eql [2008, 2008, 2085, 1499]
+      end
+    end
+
+    context 'match with 4 players and three winners' do
+      it 'returns the updated ratings of all the players' do
+        match = EloRating::Match.new
+        match.add_player(rating: 1900)
+        match.add_player(rating: 2000, winner: true)
+        match.add_player(rating: 2000, winner: true)
+        match.add_player(rating: 2100, winner: true)
+        expect(match.updated_ratings).to eql [1892, 2003, 2003, 2102]
+      end
+    end
+
+
     context 'match with 3 players and two winners' do
       it 'returns the updated ratings of all the players' do
         match = EloRating::Match.new
         match.add_player(rating: 2000, winner: true)
         match.add_player(rating: 2000, winner: true)
-        match.add_player(rating: 2000)
-        expect(match.updated_ratings).to eql [2024,2024,1976]
+        match.add_player(rating: 2100, winner: false)
+        expect(match.updated_ratings).to eql [2008,2008,2085]
       end
     end
 
-    context 'ranked game with 3 players' do
+
+    context 'match with 3 players and one winners' do
       it 'returns the updated ratings of all the players' do
         match = EloRating::Match.new
-        match.add_player(rating: 1900, place: 1)
-        match.add_player(rating: 2000, place: 2)
-        match.add_player(rating: 2000, place: 3)
-        expect(match.updated_ratings).to eql [1931, 1997, 1973]
+        match.add_player(rating: 2000, winner: true)
+        match.add_player(rating: 2000, winner: false)
+        match.add_player(rating: 2100, winner: false)
+        expect(match.updated_ratings).to eql [2027,1988,2085]
       end
     end
 
@@ -79,7 +114,7 @@ describe EloRating::Match do
     context 'adding a player with a rating' do
       it 'creates a new player with the specified rating' do
         match = EloRating::Match.new
-        expect(EloRating::Match::Player).to receive(:new).with(rating: 2000, match: match)
+        expect(EloRating::Match::Player).to receive(:new).with({rating: 2000, match: match})
 
         match.add_player(rating: 2000)
       end

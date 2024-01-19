@@ -41,45 +41,6 @@ You can chain the same function calls to achieve the same result:
 EloRating::Match.new.add_player(rating: 2000).add_player(rating: 2000, winner: true).updated_ratings # => [1988, 2012]
 ```
 
-### >2 players
-
-Most Elo rating calculators only allow for matches of just 2 players, but the formula can be extended to games of any number of players.
-
-We can do this by combining the rating adjustments for each pairing of players into one big adjustment.
-
-Say you have three players, rated 1900, 2000, and 2000. They are playing a game
-like [Monopoly](https://en.wikipedia.org/wiki/Monopoly_(game)) where there is
-only one winner. The first player wins.
-To determine their new scores:
-
-```ruby
-match = EloRating::Match.new
-match.add_player(rating: 1900, winner: true)
-match.add_player(rating: 2000)
-match.add_player(rating: 2000)
-match.updated_ratings # => [1931, 1985, 1985]
-```
-
-This is calculated as if the first player beat both of the other players and the other two players tied.
-
-### Ranked games
-
-Some games like [Mario Kart](https://en.wikipedia.org/wiki/Mario_Kart) have multiple, ranked winners.
-
-Let's say you have three players like before, rated 1900, 2000, and 2000, who came in first place, second place, and third place respectively.
-
-Instead of indicating the winner, you can specify their places:
-
-```ruby
-match = EloRating::Match.new
-match.add_player(rating: 1900, place: 1)
-match.add_player(rating: 2000, place: 2)
-match.add_player(rating: 2000, place: 3)
-match.updated_ratings # => [1931, 1997, 1973]
-```
-
-This is calculated as if the first player beat both of the other players and the second player beat the third.
-
 ## Elo rating functions
 
 The functions used in the above calculations are available for use directly:
