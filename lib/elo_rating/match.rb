@@ -82,6 +82,8 @@ class EloRating::Match
     end
 
     def total_rating_adjustments
+      return 0 if self.all_winners.size == 0
+
       # If you win you get elo from all losing opponents
       if self.winner?
          losers.map do |opponent|

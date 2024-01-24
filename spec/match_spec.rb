@@ -21,6 +21,16 @@ describe EloRating::Match do
       end
     end
 
+    context 'match with 3 players and no winner' do
+      it 'returns the updated ratings of all the players' do
+        match = EloRating::Match.new
+        match.add_player(rating: 1900)
+        match.add_player(rating: 2000)
+        match.add_player(rating: 2000)
+        expect(match.updated_ratings).to eql [1900, 2000, 2000]
+      end
+    end
+
     context 'match with 4 players and one winner' do
       it 'returns the updated ratings of all the players' do
         match = EloRating::Match.new
