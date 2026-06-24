@@ -82,6 +82,12 @@ class EloRating::Match
     end
 
     def total_rating_adjustments
+      # Place-based matches (used for draws and ranked finishes) are scored as a
+      # round robin: every player is compared against every other. This is the
+      # only path that gives a draw any movement — the winner path below treats a
+      # winner-less table as a no-op.
+      return place_based_adjustments if place_based?
+
       return 0 if self.all_winners.size == 0
 
       # If you win you get elo from all losing opponents
@@ -149,8 +155,33 @@ class EloRating::Match
       return 0 if !winners.empty? && !self.winner?
     end
 
-    def won_against?(opponent)
-      winner? || placed_ahead_of?(opponent)
+    # True when this is a place-based match (any player was given a place). The
+    # match validates that places are all-or-nothing, so checking any player is
+    # enough.
+    def place_based?
+      match.players.any? { |player| player.place }
+    end
+
+    # Score this player pairwise against every opponent using their finishing
+    # places: 1 for placing ahead, 0 for behind, 0.5 for a tie.
+    def place_based_adjustments
+      opponents.map do |opponent|
+        EloRating.rating_adjustment(
+          expected_score_against(opponent),
+          place_score_against(opponent),
+          rating: rating
+        )
+      end.reduce(0, :+)
+    end
+
+    def place_score_against(opponent)
+      if place == opponent.place
+        0.5
+      elsif placed_ahead_of?(opponent)
+        1.0
+      else
+        0.0
+      end
     end
 
     def placed_ahead_of?(opponent)

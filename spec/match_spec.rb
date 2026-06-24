@@ -86,6 +86,74 @@ describe EloRating::Match do
       end
     end
 
+    # Place-based scoring: each player is scored pairwise against every other
+    # player (1 for placing ahead, 0 for behind, 0.5 for a tie). This is the
+    # path that supports draws — a tie nudges ratings toward each other rather
+    # than leaving them untouched.
+    context 'place-based scoring' do
+      context 'two players drawn (equal ratings)' do
+        it 'leaves equal ratings untouched' do
+          match = EloRating::Match.new
+          match.add_player(rating: 2000, place: 1)
+          match.add_player(rating: 2000, place: 1)
+          expect(match.updated_ratings).to eql [2000, 2000]
+        end
+      end
+
+      context 'two players drawn (unequal ratings)' do
+        it 'moves the favourite down and the underdog up' do
+          match = EloRating::Match.new
+          match.add_player(rating: 2000, place: 1)
+          match.add_player(rating: 1900, place: 1)
+          expect(match.updated_ratings).to eql [1997, 1903]
+        end
+      end
+
+      context 'three players drawn (full table draw)' do
+        it 'pulls every rating toward the mean' do
+          match = EloRating::Match.new
+          match.add_player(rating: 1900, place: 1)
+          match.add_player(rating: 2000, place: 1)
+          match.add_player(rating: 2100, place: 1)
+          expect(match.updated_ratings).to eql [1910, 2000, 2090]
+        end
+      end
+
+      context 'one player ahead of equally-rated tied chasers' do
+        it 'scores the leader against both chasers and the chasers as a draw' do
+          # The two tied chasers are equally rated, so their mutual draw nets
+          # zero — making this identical to the single-winner result.
+          match = EloRating::Match.new
+          match.add_player(rating: 1900, place: 1)
+          match.add_player(rating: 2000, place: 2)
+          match.add_player(rating: 2000, place: 2)
+          expect(match.updated_ratings).to eql [1931, 1985, 1985]
+        end
+      end
+
+      context 'one player ahead of unequally-rated tied chasers' do
+        it 'lets the lower-rated chaser gain from drawing the higher-rated one' do
+          match = EloRating::Match.new
+          match.add_player(rating: 1900, place: 2)
+          match.add_player(rating: 2000, place: 2)
+          match.add_player(rating: 2000, place: 2)
+          match.add_player(rating: 2100, place: 1)
+          expect(match.updated_ratings).to eql [1901, 1988, 1988, 2123]
+        end
+      end
+
+      context 'four players, two tied for first (a draw for the win)' do
+        it 'splits the table into the tied winners and the tied losers' do
+          match = EloRating::Match.new
+          match.add_player(rating: 2000, place: 1)
+          match.add_player(rating: 2000, place: 1)
+          match.add_player(rating: 2100, place: 2)
+          match.add_player(rating: 1500, place: 2)
+          expect(match.updated_ratings).to eql [2017, 2017, 2058, 1509]
+        end
+      end
+    end
+
     context 'custom K-factor function' do
       it 'uses the custom K-factor function' do
         EloRating::set_k_factor do |rating|
